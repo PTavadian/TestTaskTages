@@ -1,0 +1,25 @@
+version: '3.5'
+
+services:
+
+  postgres:
+    image: postgres:14.3-alpine  
+    container_name: postgres_db
+    ports:
+      - '${POSTGRES_PORT}:${POSTGRES_PORT}'
+    environment: 
+      POSTGRES_DB: ${POSTGRES_DATABASE}
+      POSTGRES_USER: ${POSTGRES_USERNAME}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    command: 
+      - "postgres"
+      - "-c"
+      - "port=${POSTGRES_PORT}"
+    # volumes:
+    #   - ${PATH_DB}/postgres:/var/lib/postgresql/data
+    restart: on-failure
+    deploy:
+      resources:
+        limits:
+          cpus: '0.1'
+          memory: 100M

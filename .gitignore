@@ -1,0 +1,8 @@
+trash
+
+.env 
+.vscode/ 
+.idea/
+
+*.log
+*.txt
