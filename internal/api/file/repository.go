@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strings"
 
-	"app/internal/api/file"
 	"app/pkg/client/postgresql"
 	"app/pkg/logging"
 
@@ -18,7 +17,7 @@ type repository struct {
 	logger *logging.Logger
 }
 
-func NewRepository(logger *logging.Logger, client postgresql.Client) file.FileRepository {
+func NewRepository(logger *logging.Logger, client postgresql.Client) FileRepository {
 	return &repository{
 		client: client,
 		logger: logger,
@@ -29,7 +28,7 @@ func formatQuery(q string) string {
 	return strings.ReplaceAll(strings.ReplaceAll(q, "\t", ""), "\n", " ")
 }
 
-func (r *repository) Create(ctx context.Context, curFile *file.File) error {
+func (r *repository) Create(ctx context.Context, curFile *File) error {
 	q := `
 		INSERT INTO files 
 			(name, data)
@@ -58,7 +57,7 @@ func (r *repository) Create(ctx context.Context, curFile *file.File) error {
 	return nil
 }
 
-func (r *repository) FindAll(ctx context.Context) (files []file.File, err error) {
+func (r *repository) FindAll(ctx context.Context) (files []File, err error) {
 	q := `
 		SELECT 
 			id,
@@ -77,9 +76,9 @@ func (r *repository) FindAll(ctx context.Context) (files []file.File, err error)
 		return nil, err
 	}
 
-	files = make([]file.File, 0)
+	files = make([]File, 0)
 	for rows.Next() {
-		var fl file.File
+		var fl File
 
 		err = rows.Scan(
 			&fl.ID,
@@ -108,25 +107,25 @@ func (r *repository) FindAll(ctx context.Context) (files []file.File, err error)
 	return files, nil
 }
 
-func (r *repository) FindOne(ctx context.Context, id string) (file.File, error) {
+func (r *repository) FindOne(ctx context.Context, id string) (File, error) {
 	q := `
 	SELECT id, name, data, create_time, update_time FROM files WHERE id = $1;
 	`
 
-	var fl file.File
+	var fl File
 	err := r.client.QueryRow(ctx, q, id).Scan(&fl.ID, &fl.Name, &fl.Data, &fl.CreatedAt, &fl.UpdatedAt)
 	if err != nil {
 		if strings.Contains(err.Error(), "no rows in result set") {
-			return file.File{}, nil
+			return File{}, nil
 		}
 		r.logger.Error(err)
-		return file.File{}, err
+		return File{}, err
 	}
 
 	return fl, nil
 }
 
-func (r *repository) Update(ctx context.Context, curFile *file.File) (files []file.File, err error) {
+func (r *repository) Update(ctx context.Context, curFile *File) (files []File, err error) {
 	q := `
 	UPDATE files SET
 		name = $1,
@@ -141,9 +140,9 @@ func (r *repository) Update(ctx context.Context, curFile *file.File) (files []fi
 	if err != nil {
 		return nil, err
 	}
-	files = make([]file.File, 0)
+	files = make([]File, 0)
 	for rows.Next() {
-		var fl file.File
+		var fl File
 		err = rows.Scan(
 			&fl.CreatedAt,
 			&fl.UpdatedAt,

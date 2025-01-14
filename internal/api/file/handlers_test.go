@@ -16,7 +16,6 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// MockFileRepository is a mock implementation of the FileRepository interface
 type MockFileRepository struct {
 	mock.Mock
 }
@@ -53,7 +52,7 @@ func (m *MockFileRepository) CreateTables(ctx context.Context) error {
 
 func TestUploadFile(t *testing.T) {
 	ctx := context.TODO()
-	logger := logging.NewLogger()
+	logger := logging.NewTestLogger()
 
 	t.Run("Success", func(t *testing.T) {
 		mockRepo := new(MockFileRepository)
@@ -95,7 +94,7 @@ func TestUploadFile(t *testing.T) {
 
 func TestDownloadFile(t *testing.T) {
 	ctx := context.TODO()
-	logger := logging.NewLogger()
+	logger := logging.NewTestLogger()
 
 	t.Run("Success", func(t *testing.T) {
 		mockRepo := new(MockFileRepository)
@@ -135,7 +134,7 @@ func TestDownloadFile(t *testing.T) {
 
 func TestListFiles(t *testing.T) {
 	ctx := context.TODO()
-	logger := logging.NewLogger()
+	logger := logging.NewTestLogger()
 
 	t.Run("Success", func(t *testing.T) {
 		mockRepo := new(MockFileRepository)
@@ -178,17 +177,16 @@ func TestListFiles(t *testing.T) {
 }
 
 func TestConcurrentUpload(t *testing.T) {
-	logger := logging.NewLogger()
+	logger := logging.NewTestLogger()
 	mockRepo := new(MockFileRepository)
 	server := file.NewServer(logger, mockRepo)
 
 	ctx := context.TODO()
 
-	// Установим ожидания для метода Create
 	mockRepo.On("Create", ctx, mock.AnythingOfType("*file.File")).Return(nil).Run(func(args mock.Arguments) {
 		fileArg := args.Get(1).(*file.File)
-		fileArg.ID = "mockID"             // Инициализация mock ID
-		time.Sleep(50 * time.Millisecond) // Задержка для имитации времени выполнения
+		fileArg.ID = "mockID"
+		time.Sleep(50 * time.Millisecond)
 	})
 
 	var wg sync.WaitGroup
@@ -196,9 +194,8 @@ func TestConcurrentUpload(t *testing.T) {
 	var maxActiveRequests int32
 	var mu sync.Mutex
 
-	sem := make(chan struct{}, 10) // Семафор на 10 одновременных запросов
+	sem := make(chan struct{}, 10)
 
-	// Создадим 20 конкурентных запросов на загрузку (ограничение 10)
 	for i := 0; i < 20; i++ {
 		wg.Add(1)
 		go func(i int) {
@@ -233,7 +230,7 @@ func TestConcurrentUpload(t *testing.T) {
 }
 
 func TestConcurrentDownload(t *testing.T) {
-	logger := logging.NewLogger()
+	logger := logging.NewTestLogger()
 	mockRepo := new(MockFileRepository)
 	server := file.NewServer(logger, mockRepo)
 
@@ -291,7 +288,7 @@ func TestConcurrentDownload(t *testing.T) {
 }
 
 func TestConcurrentListFiles(t *testing.T) {
-	logger := logging.NewLogger()
+	logger := logging.NewTestLogger()
 	mockRepo := new(MockFileRepository)
 	server := file.NewServer(logger, mockRepo)
 

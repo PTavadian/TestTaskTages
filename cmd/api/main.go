@@ -8,12 +8,12 @@ import (
 
 	"app/api/proto"
 	"app/internal/api/file"
-	fileDB "app/internal/api/file/db"
 	"app/internal/config"
 	postgresqlClient "app/pkg/client/postgresql"
 	"app/pkg/logging"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 func main() {
@@ -28,7 +28,7 @@ func main() {
 		log.Fatalf("failed to connect to PostgreSQL: %v", err)
 	}
 
-	fileRepository := fileDB.NewRepository(logger, postgreSQLClient)
+	fileRepository := file.NewRepository(logger, postgreSQLClient)
 	startGRPCServer(logger, cfg, fileRepository)
 }
 
@@ -39,6 +39,9 @@ func startGRPCServer(logger *logging.Logger, cfg *config.Config, fileRepository 
 	}
 
 	grpcServer := grpc.NewServer()
+	if *cfg.IsDebug {
+		reflection.Register(grpcServer)
+	}
 	srv := file.NewServer(logger, fileRepository)
 	proto.RegisterFileServiceServer(grpcServer, srv)
 

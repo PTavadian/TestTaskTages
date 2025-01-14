@@ -22,13 +22,12 @@ func NewServer(logger *logging.Logger, fileRepository FileRepository) *Server {
 	return &Server{
 		FileRepository:    fileRepository,
 		Logger:            logger,
-		UploadSemaphore:   make(chan struct{}, 10), // Ограничение на 10 одновременных запросов
+		UploadSemaphore:   make(chan struct{}, 10),
 		DownloadSemaphore: make(chan struct{}, 10),
 		ListSemaphore:     make(chan struct{}, 100),
 	}
 }
 
-// Обработчик загрузки файла
 func (s *Server) UploadFile(ctx context.Context, req *pb.UploadFileRequest) (*pb.UploadFileResponse, error) {
 	s.UploadSemaphore <- struct{}{}
 	fmt.Println("Uploading started:", req.FileName)
@@ -49,7 +48,6 @@ func (s *Server) UploadFile(ctx context.Context, req *pb.UploadFileRequest) (*pb
 	return &pb.UploadFileResponse{Id: newFile.ID}, nil
 }
 
-// Обработчик скачивания файла
 func (s *Server) DownloadFile(ctx context.Context, req *pb.DownloadFileRequest) (*pb.DownloadFileResponse, error) {
 	s.DownloadSemaphore <- struct{}{}
 	defer func() { <-s.DownloadSemaphore }()
@@ -63,7 +61,6 @@ func (s *Server) DownloadFile(ctx context.Context, req *pb.DownloadFileRequest) 
 	return &pb.DownloadFileResponse{FileName: fl.Name, Data: fl.Data, CreatedAt: fl.CreatedAt.Unix(), UpdatedAt: fl.UpdatedAt.Unix()}, nil
 }
 
-// Обработчик получения списка файлов
 func (s *Server) ListFiles(ctx context.Context, req *pb.ListFilesRequest) (*pb.ListFilesResponse, error) {
 	s.ListSemaphore <- struct{}{}
 	defer func() { <-s.ListSemaphore }()
