@@ -10,6 +10,7 @@ import (
 	"app/pkg/logging"
 
 	"github.com/jackc/pgconn"
+	"github.com/jackc/pgx/v4"
 )
 
 type repository struct {
@@ -70,11 +71,11 @@ func (r *repository) FindAll(ctx context.Context) (files []File, err error) {
 	`
 
 	rows, err := r.client.Query(ctx, q)
-
 	if err != nil {
 		r.logger.Error(rows.CommandTag(), err)
 		return nil, err
 	}
+	defer rows.Close()
 
 	files = make([]File, 0)
 	for rows.Next() {
@@ -115,7 +116,7 @@ func (r *repository) FindOne(ctx context.Context, id string) (File, error) {
 	var fl File
 	err := r.client.QueryRow(ctx, q, id).Scan(&fl.ID, &fl.Name, &fl.Data, &fl.CreatedAt, &fl.UpdatedAt)
 	if err != nil {
-		if strings.Contains(err.Error(), "no rows in result set") {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return File{}, nil
 		}
 		r.logger.Error(err)
@@ -140,6 +141,8 @@ func (r *repository) Update(ctx context.Context, curFile *File) (files []File, e
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
+
 	files = make([]File, 0)
 	for rows.Next() {
 		var fl File
@@ -161,7 +164,6 @@ func (r *repository) Update(ctx context.Context, curFile *File) (files []File, e
 			r.logger.Error(newErr)
 		}
 		return nil, err
-
 	}
 
 	res := rows.CommandTag()
@@ -183,6 +185,7 @@ func (r *repository) Delete(ctx context.Context, id string) ([]string, error) {
 		r.logger.Error(err)
 		return nil, err
 	}
+	defer rows.Close()
 
 	ids := []string{}
 	for rows.Next() {

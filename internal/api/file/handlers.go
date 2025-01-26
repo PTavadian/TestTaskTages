@@ -38,7 +38,7 @@ func (s *Server) UploadFile(ctx context.Context, req *pb.UploadFileRequest) (*pb
 
 	newFile := File{Name: req.FileName, Data: req.Data}
 
-	err := s.FileRepository.Create(context.TODO(), &newFile)
+	err := s.FileRepository.Create(ctx, &newFile)
 	if err != nil {
 		s.Logger.Error(fmt.Sprintf("Failed to create file: %v", err))
 		return nil, err
@@ -52,7 +52,7 @@ func (s *Server) DownloadFile(ctx context.Context, req *pb.DownloadFileRequest) 
 	s.DownloadSemaphore <- struct{}{}
 	defer func() { <-s.DownloadSemaphore }()
 
-	fl, err := s.FileRepository.FindOne(context.TODO(), req.Id)
+	fl, err := s.FileRepository.FindOne(ctx, req.Id)
 	if err != nil {
 		s.Logger.Error(fmt.Sprintf("Failed to find file: %v", err))
 		return nil, err
@@ -65,7 +65,7 @@ func (s *Server) ListFiles(ctx context.Context, req *pb.ListFilesRequest) (*pb.L
 	s.ListSemaphore <- struct{}{}
 	defer func() { <-s.ListSemaphore }()
 
-	files, err := s.FileRepository.FindAll(context.TODO())
+	files, err := s.FileRepository.FindAll(ctx)
 	if err != nil {
 		s.Logger.Error(fmt.Sprintf("Failed to find all files: %v", err))
 		return nil, err
